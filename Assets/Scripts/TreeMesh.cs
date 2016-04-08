@@ -2,7 +2,7 @@
 using System.Collections;
 
 [ExecuteInEditMode]
-[RequireComponent(typeof(LSysTree))]
+[RequireComponent(typeof(LSystem))]
 [RequireComponent(typeof(MeshFilter))]
 public class TreeMesh : MonoBehaviour
 {
@@ -24,7 +24,7 @@ public class TreeMesh : MonoBehaviour
 
 	public void MakeMesh()
     {
-		tree = GetComponent<LSysTree> ().GetTreeNode ();
+		tree = GetComponent<LSystem> ().GetTreeNode ();
 
         int indicesPerSegment = angularResolution * 2 * 3;
         

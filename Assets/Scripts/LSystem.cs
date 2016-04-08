@@ -1,29 +1,64 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
-class LSystem
+[ExecuteInEditMode]
+public class LSystem : MonoBehaviour 
 {
+	[Range(.0f, 90.0f)]
 	public float baseAngle = 20.0f;
+	[Range(1.0f, 60.0f)]
 	public float baseDistance = 20.0f;
+	[Range(.0f, 1.0f)]
 	public float delta = .5f;
+	[Range(.0f, 12.0f)]
+	public float noiseFactor = 1.0f;
+	[Range(.0f, .1f)]
+	public float noiseScale = 1.0f;
+	public Vector3 noiseOffset = Vector3.zero;
+	[Range(1, 3)]
+	public int generation = 2;
+	public string rule = "|[<F][>F]|[^F][&F]|[+F][-F]|";
 
+	public UnityEvent changed;
+
+	TreeNode node = null;
 	LinkedList<DrawState> stateStack;
 	DrawState currentState;
 
-	public LSystem() 
+	void OnValidate () 
+	{
+		Generate ();
+	}
+	
+	void Generate () 
 	{
 		stateStack = new LinkedList<DrawState> ();
-		currentState = new DrawState(); 
+		currentState = new DrawState();
+		node = MakeTree (rule, generation);
+
+		var it = node.MapNodeIter ();
+		it.Next (); // pass root
+		while(!it.IsDone())
+		{
+			it.Get ().position += Perlin3D (it.Get ().position);
+			it.Next ();
+		}
+
+		changed.Invoke ();
+	}
+
+	public TreeNode GetTreeNode()
+	{
+		if (node == null)
+			Generate ();
+		return node;
 	}
 
 	public TreeNode MakeTree(string rule, int generation)
 	{
-		// TODO: validate rule
-		// -> each char is a valid command
-		// -> no more stack pops than pushes
-
 		var root = new TreeNode();
 
 		root.root = root;
@@ -112,35 +147,44 @@ class LSystem
 	{
 		switch (cmd)
 		{
-			case '|':
-				{
-					currentState.distance = baseDistance * Mathf.Pow(delta, generation);
-					currentState.position += currentState.rotation * new Vector3(.0f, currentState.distance * val, .0f);
-					AppendNode (generation);
-				}
-				break;
+		case '|':
+			{
+				currentState.distance = baseDistance * Mathf.Pow (delta, generation);
+				currentState.position += currentState.rotation * new Vector3(.0f, currentState.distance * val, .0f);
+				AppendNode (generation);
+			}
+			break;
 
-			case 'F':
-				{
-					currentState.position += currentState.rotation * new Vector3(.0f, currentState.distance * val, .0f);
-					AppendNode (generation);
-					if (generation < maxGeneration) ProcessNode(currentState.node, rule, generation + 1, maxGeneration);
-				}
-				break;
+		case 'F':
+			{
+				currentState.position += currentState.rotation * new Vector3(.0f, currentState.distance * val, .0f);
+				AppendNode (generation);
+				if (generation < maxGeneration) ProcessNode(currentState.node, rule, generation + 1, maxGeneration);
+			}
+			break;
 
-			case '[': PushState(); break;
-			case ']': PopState();  break;
+		case '[': PushState(); break;
+		case ']': PopState();  break;
 
-			case '+': Rotate(Quaternion.Euler(.0f, currentState.angle * val,         .0f)); break;
-			case '-': Rotate(Quaternion.Euler(.0f, currentState.angle * val * -1.0f, .0f)); break;
+		case '+': Rotate(Quaternion.Euler(.0f, currentState.angle * val,         .0f)); break;
+		case '-': Rotate(Quaternion.Euler(.0f, currentState.angle * val * -1.0f, .0f)); break;
 
-			case '^': Rotate(Quaternion.Euler(currentState.angle * val,         .0f, .0f)); break;
-			case '&': Rotate(Quaternion.Euler(currentState.angle * val * -1.0f, .0f, .0f)); break;
+		case '^': Rotate(Quaternion.Euler(currentState.angle * val,         .0f, .0f)); break;
+		case '&': Rotate(Quaternion.Euler(currentState.angle * val * -1.0f, .0f, .0f)); break;
 
-			case '>': Rotate(Quaternion.Euler(.0f, .0f, currentState.angle * val)); break;
-			case '<': Rotate(Quaternion.Euler (.0f, .0f, currentState.angle * val * -1.0f)); break;
+		case '>': Rotate(Quaternion.Euler(.0f, .0f, currentState.angle * val));         break;
+		case '<': Rotate(Quaternion.Euler(.0f, .0f, currentState.angle * val * -1.0f)); break;
 
-			default: break;
+		default: break;
 		}
+	}
+
+	Vector3 Perlin3D(Vector3 input)
+	{
+		var p = input + noiseOffset;
+		var nx = Mathf.PerlinNoise (p.y * noiseScale, p.z * noiseScale);
+		var ny = Mathf.PerlinNoise (p.x * noiseScale, p.z * noiseScale);
+		var nz = Mathf.PerlinNoise (p.x * noiseScale, p.y * noiseScale);
+		return (new Vector3(nx, ny, nz) - Vector3.one * .5f) * 2.0f * noiseFactor;
 	}
 }
