@@ -13,12 +13,12 @@ public class LSystem : MonoBehaviour
 	public float baseDistance = 20.0f;
 	[Range(.0f, 1.0f)]
 	public float delta = .5f;
-	[Range(.0f, 12.0f)]
+	[Range(.0f, 24.0f)]
 	public float noiseFactor = 1.0f;
-	[Range(.0f, .1f)]
-	public float noiseScale = 1.0f;
+	[Range(.0f, 1.0f)]
+	public float noiseScale = .02f;
 	public Vector3 noiseOffset = Vector3.zero;
-	[Range(1, 3)]
+	[Range(1, 6)]
 	public int generation = 2;
 	public string rule = "|[<F][>F]|[^F][&F]|[+F][-F]|";
 
@@ -35,6 +35,24 @@ public class LSystem : MonoBehaviour
 	
 	void Generate () 
 	{
+		// validate the rule
+		var nPop = 0;
+		var nPush = 0;
+		foreach (char c in rule)
+		{
+			switch(c)
+			{
+			case '[': nPush++; break;
+			case ']': nPop++;  break;
+			}
+		}
+
+		if (nPop > nPush) 
+		{
+			Debug.LogError ("rule has to have more Pop than Push operations");
+			return;
+		}
+
 		stateStack = new LinkedList<DrawState> ();
 		currentState = new DrawState();
 		node = MakeTree (rule, generation);
