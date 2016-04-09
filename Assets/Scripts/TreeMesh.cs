@@ -12,7 +12,7 @@ public class TreeMesh : MonoBehaviour
 	public int segmentsPerLink = 3;
 	[Range(.0f, 1.0f)]
 	public float radiusMul = 1.0f;
-	[Range(.0f, 10.0f)]
+	[Range(.0f, 100.0f)]
 	public float hermiteFactor = 2.0f;
 
 	TreeNode tree = null;

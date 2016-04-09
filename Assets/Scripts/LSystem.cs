@@ -49,7 +49,7 @@ public class LSystem : MonoBehaviour
 
 		if (nPop > nPush) 
 		{
-			Debug.LogError ("rule has to have more Pop than Push operations");
+			Debug.LogError ("rule has more Pop than Push operations");
 			return;
 		}
 
